@@ -1,39 +1,85 @@
 import { sql } from '@vercel/postgres'
 
 export async function seed() {
-  const createTable = await sql`
-    CREATE TABLE IF NOT EXISTS users (
+  const createTables = await Promise.all([
+    sql`
+     CREATE TABLE IF NOT EXISTS specializations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS patients (
+      id SERIAL PRIMARY KEY,
+      first_name VARCHAR(255) NOT NULL,
+      last_name VARCHAR(255) NOT NULL,
+      birth_date DATE NOT NULL,
+      gender VARCHAR(10) NOT NULL,
+      address VARCHAR(255),
+      phone VARCHAR(20)
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS doctors (
+      id SERIAL PRIMARY KEY,
+      first_name VARCHAR(255) NOT NULL,
+      last_name VARCHAR(255) NOT NULL,
+      office_number INTEGER,
+      phone VARCHAR(20)
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS doctors_specializations (
+      doctor_id INTEGER REFERENCES doctors(id),
+      specialization_id INTEGER REFERENCES specializations(id),
+      PRIMARY KEY (doctor_id, specialization_id)
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS appointment_schedule (
+      id SERIAL PRIMARY KEY,
+      doctor_id INTEGER REFERENCES doctors(id),
+      day_of_week VARCHAR(15) NOT NULL,
+      start_time TIME NOT NULL,
+      end_time TIME NOT NULL
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS visits (
+      id SERIAL PRIMARY KEY,
+      patient_id INTEGER REFERENCES patients(id),
+      doctor_id INTEGER REFERENCES doctors(id),
+      schedule_id INTEGER REFERENCES appointment_schedule(id),
+      visit_date DATE NOT NULL,
+      prescription TEXT
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS diagnoses (
+      id SERIAL PRIMARY KEY,
+      diagnosis_name VARCHAR(255) NOT NULL,
+      description TEXT
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS visit_diagnoses (
+      visit_id INTEGER REFERENCES visits(id),
+      diagnosis_id INTEGER REFERENCES diagnoses(id),
+      PRIMARY KEY (visit_id, diagnosis_id)
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS medical_treatments (
       id SERIAL PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      image VARCHAR(255),
-      "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    );
-    `
+      description TEXT,
+      preparation TEXT
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS diagnoses_medical_treatments (
+      diagnosis_id INTEGER REFERENCES diagnoses(id),
+      medical_treatment_id INTEGER REFERENCES medical_treatments(id),
+      PRIMARY KEY (diagnosis_id, medical_treatment_id)
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS medications (
+      id SERIAL PRIMARY KEY,
+      medication_name VARCHAR(255) NOT NULL,
+      form VARCHAR(50) NOT NULL,
+      manufacturer VARCHAR(255) NOT NULL,
+      expiry_date DATE NOT NULL
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS prescriptions (
+      id SERIAL PRIMARY KEY,
+      doctor_id INTEGER REFERENCES doctors(id),
+      patient_id INTEGER REFERENCES patients(id),
+      prescription_date DATE NOT NULL,
+      medication_id INTEGER REFERENCES medications(id),
+      instructions TEXT
+    );`
+  ]);
 
-  console.log(`Created "users" table`)
-
-  const users = await Promise.all([
-    sql`
-          INSERT INTO users (name, email, image)
-          VALUES ('Guillermo Rauch', 'rauchg@vercel.com', 'https://images.ctfassets.net/e5382hct74si/2P1iOve0LZJRZWUzfXpi9r/9d4d27765764fb1ad7379d7cbe5f1043/ucxb4lHy_400x400.jpg')
-          ON CONFLICT (email) DO NOTHING;
-      `,
-    sql`
-          INSERT INTO users (name, email, image)
-          VALUES ('Lee Robinson', 'lee@vercel.com', 'https://images.ctfassets.net/e5382hct74si/4BtM41PDNrx4z1ml643tdc/7aa88bdde8b5b7809174ea5b764c80fa/adWRdqQ6_400x400.jpg')
-          ON CONFLICT (email) DO NOTHING;
-      `,
-    sql`
-          INSERT INTO users (name, email, image)
-          VALUES ('Steven Tey', 'stey@vercel.com', 'https://images.ctfassets.net/e5382hct74si/4QEuVLNyZUg5X6X4cW4pVH/eb7cd219e21b29ae976277871cd5ca4b/profile.jpg')
-          ON CONFLICT (email) DO NOTHING;
-      `,
-  ])
-  console.log(`Seeded ${users.length} users`)
-
-  return {
-    createTable,
-    users,
-  }
+  return createTables
 }
