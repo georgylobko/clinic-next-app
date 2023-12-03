@@ -10,7 +10,7 @@ async function deleteDoctor(formData: FormData) {
     DELETE FROM doctors
     WHERE id = ${id}
   `.catch((error) => {
-		console.error('Failed to delete doctor')
+		console.error('Failed to delete doctor: ', error)
 	})
 
 	revalidatePath('/doctors')
@@ -19,20 +19,20 @@ async function deleteDoctor(formData: FormData) {
 export default async function Page() {
 	const data = await sql`
 		SELECT
-    d.id AS id,
-    d.first_name,
-    d.last_name,
-    d.office_number,
-    d.phone,
-    ARRAY_AGG(s.name) AS specialization_names
-  FROM
-    doctors d
-  JOIN
-    doctors_specializations ds ON d.id = ds.doctor_id
-  JOIN
-    specializations s ON ds.specialization_id = s.id
-  GROUP BY
-    d.id, d.first_name, d.last_name, d.office_number, d.phone;
+		  d.id AS id,
+		  d.first_name,
+		  d.last_name,
+		  d.office_number,
+		  d.phone,
+		  ARRAY_AGG(s.name) AS specialization_names
+		FROM
+		  doctors d
+		LEFT JOIN
+		  doctors_specializations ds ON d.id = ds.doctor_id
+		LEFT JOIN
+		  specializations s ON ds.specialization_id = s.id
+		GROUP BY
+		  d.id, d.first_name, d.last_name, d.office_number, d.phone;
 	`
 	const { rows: doctors } = data
 

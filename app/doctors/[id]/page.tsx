@@ -32,7 +32,6 @@ async function update(formData: FormData) {
 	await sql`
 		DELETE FROM doctors_specializations
 		WHERE doctor_id = ${id}
-		AND specialization_id <> ALL(${specializations});
 	`.catch((error) => {
 		console.error('Failed delete: ', error)
 	});
@@ -62,11 +61,11 @@ export default async function Page({ params: { id } }: { params: { id: string } 
 
 	const specializationsData = await sql`SELECT * FROM specializations`
 	const { rows: specializations } = specializationsData
-
-	const doctorsSpecializationsData = await sql`SELECT specialization_id FROM doctors_specializations WHERE doctor_id = ${id}`
-	const doctorsSpecializations = doctorsSpecializationsData.rows.map((item) => item?.specialization_id)
+	let doctorsSpecializations = []
 
 	if (id !== 'new') {
+		const doctorsSpecializationsData = await sql`SELECT specialization_id FROM doctors_specializations WHERE doctor_id = ${id}`
+		doctorsSpecializations = doctorsSpecializationsData.rows.map((item) => item?.specialization_id)
 		const result = await sql`SELECT * FROM doctors WHERE id = ${id}`
 		data = result.rows[0]
 	}
