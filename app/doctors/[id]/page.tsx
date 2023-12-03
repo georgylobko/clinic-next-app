@@ -27,7 +27,7 @@ async function update(formData: FormData) {
 	const last_name = formData.get('last_name') as string;
 	const office_number = formData.get('office_number') as string;
 	const phone = formData.get('phone') as string;
-	const specializations = formData.getAll('specializations').map((item) => parseInt(item.toString()))
+	const specializations = formData.getAll('specializations') as any
 
 	await sql`
 		DELETE FROM doctors_specializations
@@ -35,7 +35,7 @@ async function update(formData: FormData) {
 		AND specialization_id <> ALL(${specializations});
 	`.catch((error) => {
 		console.error('Failed delete: ', error)
-	})
+	});
 
 	await sql`
 		INSERT INTO doctors_specializations (doctor_id, specialization_id)
