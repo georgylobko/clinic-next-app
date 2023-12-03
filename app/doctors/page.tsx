@@ -17,7 +17,23 @@ async function deleteDoctor(formData: FormData) {
 }
 
 export default async function Page() {
-	const data = await sql`SELECT * FROM doctors`
+	const data = await sql`
+		SELECT
+    d.id AS id,
+    d.first_name,
+    d.last_name,
+    d.office_number,
+    d.phone,
+    ARRAY_AGG(s.name) AS specialization_names
+  FROM
+    doctors d
+  JOIN
+    doctors_specializations ds ON d.id = ds.doctor_id
+  JOIN
+    specializations s ON ds.specialization_id = s.id
+  GROUP BY
+    d.id, d.first_name, d.last_name, d.office_number, d.phone;
+	`
 	const { rows: doctors } = data
 
 	return (
@@ -42,6 +58,9 @@ export default async function Page() {
 						Телефон
 					</th>
 					<th scope="col" className="px-6 py-3">
+						Специализации
+					</th>
+					<th scope="col" className="px-6 py-3">
 						Действия
 					</th>
 				</tr>
@@ -60,6 +79,9 @@ export default async function Page() {
 							</td>
 							<td className="px-6 py-4">
 								{doctor.phone}
+							</td>
+							<td className="px-6 py-4">
+								{doctor.specialization_names?.join(', ')}
 							</td>
 							<td className="px-6 py-4 flex justify-left">
 								<Link href={`/doctors/${doctor.id}`}>
