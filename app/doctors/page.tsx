@@ -16,24 +16,97 @@ async function deleteDoctor(formData: FormData) {
 	revalidatePath('/doctors')
 }
 
-export default async function Page() {
-	const data = await sql`
-		SELECT
-		  d.id AS id,
-		  d.first_name,
-		  d.last_name,
-		  d.office_number,
-		  d.phone,
-		  ARRAY_AGG(s.name) AS specialization_names
-		FROM
-		  doctors d
-		LEFT JOIN
-		  doctors_specializations ds ON d.id = ds.doctor_id
-		LEFT JOIN
-		  specializations s ON ds.specialization_id = s.id
-		GROUP BY
-		  d.id, d.first_name, d.last_name, d.office_number, d.phone;
+async function getDoctors(params: { first_name?: string; last_name?: string }) {
+	const { first_name, last_name } = params
+
+	if (!first_name && !last_name) {
+		return sql`
+			SELECT
+			  d.id AS id,
+			  d.first_name,
+			  d.last_name,
+			  d.office_number,
+			  d.phone,
+			  ARRAY_AGG(s.name) AS specialization_names
+			FROM
+			  doctors d
+			LEFT JOIN
+			  doctors_specializations ds ON d.id = ds.doctor_id
+			LEFT JOIN
+			  specializations s ON ds.specialization_id = s.id
+			GROUP BY
+			  d.id, d.first_name, d.last_name, d.office_number, d.phone;
 	`
+	}
+
+	if (first_name && last_name) {
+		return sql`
+			SELECT
+			  d.id AS id,
+			  d.first_name,
+			  d.last_name,
+			  d.office_number,
+			  d.phone,
+			  ARRAY_AGG(s.name) AS specialization_names
+			FROM
+			  doctors d
+			LEFT JOIN
+			  doctors_specializations ds ON d.id = ds.doctor_id
+			LEFT JOIN
+			  specializations s ON ds.specialization_id = s.id
+			WHERE
+				d.first_name = ${first_name} AND d.last_name = ${last_name}
+			GROUP BY
+			  d.id, d.first_name, d.last_name, d.office_number, d.phone;
+	`
+	}
+
+	if (first_name) {
+		return sql`
+			SELECT
+			  d.id AS id,
+			  d.first_name,
+			  d.last_name,
+			  d.office_number,
+			  d.phone,
+			  ARRAY_AGG(s.name) AS specialization_names
+			FROM
+			  doctors d
+			LEFT JOIN
+			  doctors_specializations ds ON d.id = ds.doctor_id
+			LEFT JOIN
+			  specializations s ON ds.specialization_id = s.id
+			WHERE
+				d.first_name = ${first_name || last_name}
+			GROUP BY
+			  d.id, d.first_name, d.last_name, d.office_number, d.phone;
+		`
+	}
+
+	return sql`
+			SELECT
+			  d.id AS id,
+			  d.first_name,
+			  d.last_name,
+			  d.office_number,
+			  d.phone,
+			  ARRAY_AGG(s.name) AS specialization_names
+			FROM
+			  doctors d
+			LEFT JOIN
+			  doctors_specializations ds ON d.id = ds.doctor_id
+			LEFT JOIN
+			  specializations s ON ds.specialization_id = s.id
+			WHERE
+				d.last_name = ${first_name || last_name}
+			GROUP BY
+			  d.id, d.first_name, d.last_name, d.office_number, d.phone;
+		`
+}
+
+export default async function Page(props: { searchParams: { first_name?: string; last_name?: string } }) {
+	const { first_name, last_name } = props.searchParams
+	const data = await getDoctors(props.searchParams)
 	const { rows: doctors } = data
 
 	return (
@@ -41,6 +114,26 @@ export default async function Page() {
 			<Link href='/doctors/new'>
 				<button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-white-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Добавить</button>
 			</Link>
+
+			<div className="mt-2 mb-2 max-w-screen-md">
+				<form className="rounded-xl border border-gray-200 bg-white p-6 shadow-lg">
+					<h2 className="text-stone-700 text-xl font-bold">Фильтры</h2>
+					<div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						<div className="flex flex-col">
+							<label htmlFor="first_name" className="text-stone-600 text-sm font-medium">Имя</label>
+							<input type="text" id="first_name" name="first_name" defaultValue={first_name} className="mt-2 block w-full rounded-md border border-gray-200 px-2 py-2 shadow-sm outline-none focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+						</div>
+						<div className="flex flex-col">
+							<label htmlFor="last_name" className="text-stone-600 text-sm font-medium">Имя</label>
+							<input type="text" id="last_name" name="last_name" defaultValue={last_name} className="mt-2 block w-full rounded-md border border-gray-200 px-2 py-2 shadow-sm outline-none focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+						</div>
+					</div>
+
+					<div className="mt-6 grid w-full grid-cols-2 justify-end space-x-4 md:flex">
+						<button className="active:scale-95 rounded-lg bg-blue-600 px-8 py-2 font-medium text-white outline-none focus:ring hover:opacity-90" type="submit">Применить</button>
+					</div>
+				</form>
+			</div>
 
 			<table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 mt-4">
 				<thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
