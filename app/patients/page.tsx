@@ -2,6 +2,8 @@ import { sql } from '@vercel/postgres'
 import { revalidatePath } from 'next/cache'
 import Link from "next/link";
 
+import { formatDate } from "@/lib/utils";
+
 async function deleteItem(formData: FormData) {
 	'use server';
 	const id = formData.get('id') as string;
@@ -46,12 +48,6 @@ async function getItems(params: { first_name?: string; last_name?: string }) {
 			WHERE
 				last_name = ${first_name || last_name};
 		`
-}
-
-const formatDate = (date?: Date) => {
-	if (!date) return ''
-
-	return date?.toISOString().split('T')[0]
 }
 
 export default async function Page(props: { searchParams: { first_name?: string; last_name?: string } }) {

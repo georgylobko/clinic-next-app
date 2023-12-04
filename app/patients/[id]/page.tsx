@@ -2,6 +2,8 @@ import { sql } from "@vercel/postgres";
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 
+import { formatDate } from "@/lib/utils";
+
 async function create(formData: FormData) {
 	'use server';
 	const first_name = formData.get('first_name') as string;
@@ -20,12 +22,6 @@ async function create(formData: FormData) {
 
 	revalidatePath('/patients')
 	redirect('/patients')
-}
-
-const formatDate = (date?: Date) => {
-	if (!date) return ''
-
-	return date?.toISOString().split('T')[0]
 }
 
 async function update(formData: FormData) {

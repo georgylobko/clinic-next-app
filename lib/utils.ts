@@ -1,8 +1,5 @@
-import ms from 'ms'
+export const formatDate = (date?: Date): string => {
+  if (!date) return ''
 
-export const timeAgo = (timestamp: Date, timeOnly?: boolean): string => {
-  if (!timestamp) return 'never'
-  return `${ms(Date.now() - new Date(timestamp).getTime())}${
-    timeOnly ? '' : ' ago'
-  }`
+  return date?.toISOString().split('T')[0]
 }
