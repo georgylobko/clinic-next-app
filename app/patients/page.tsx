@@ -55,8 +55,6 @@ export default async function Page(props: { searchParams: { first_name?: string;
 	const data = await getItems(props.searchParams)
 	const { rows: patients } = data
 
-	console.log(patients)
-
 	return (
 		<div className="relative overflow-x-auto">
 			<h2 className="text-4xl font-extrabold mb-4">Пациенты</h2>
