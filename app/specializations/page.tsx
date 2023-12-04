@@ -22,6 +22,7 @@ export default async function Page() {
 
 	return (
 		<div className="relative overflow-x-auto">
+			<h2 className="text-4xl font-extrabold mb-4">Специализации</h2>
 			<Link href='/specializations/new'>
 				<button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-white-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Добавить</button>
 			</Link>
