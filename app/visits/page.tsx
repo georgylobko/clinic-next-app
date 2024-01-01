@@ -117,7 +117,7 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 							<label htmlFor="patient_id" className="block mb-2 text-sm font-medium text-white-900">Пациент</label>
 							<select name="patient_id" id="patient_id" defaultValue={patient_id}
 							        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500">
-								<option key={0} selected></option>
+								<option key={0} value=""></option>
 								{patients.map((item) => (
 										<option key={item.id} value={item.id}>{item.first_name} {item.last_name}</option>
 								))}
@@ -127,7 +127,7 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 							<label htmlFor="doctor_id" className="block mb-2 text-sm font-medium text-white-900">Врач</label>
 							<select name="doctor_id" id="doctor_id" defaultValue={doctor_id}
 							        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500">
-								<option key={0} selected></option>
+								<option key={0} value=""></option>
 								{doctors.map((item) => (
 										<option key={item.id} value={item.id}>{item.first_name} {item.last_name}</option>
 								))}
@@ -157,6 +157,9 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 					<th scope="col" className="px-6 py-3">
 						Рекомендации
 					</th>
+					<th scope="col" className="px-6 py-3">
+						Действия
+					</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -170,6 +173,9 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 							</td>
 							<td className="px-6 py-4">
 								{formatDate(item.visit_date)}
+							</td>
+							<td className="px-6 py-4">
+								{item.prescription}
 							</td>
 							<td className="px-6 py-4 flex justify-left">
 								<Link href={`/visits/${item.id}`}>
