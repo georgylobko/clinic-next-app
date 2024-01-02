@@ -1,7 +1,7 @@
 import { sql } from "@vercel/postgres";
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import {formatDate} from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
 async function create(formData: FormData) {
 	'use server';
@@ -9,12 +9,20 @@ async function create(formData: FormData) {
 	const doctor_id = formData.get('doctor_id') as string;
 	const visit_date = formData.get('visit_date') as string;
 	const prescription = formData.get('prescription') as string;
+	const diagnoses = formData.getAll('diagnoses') as any
 
-	await sql`
+	const data = await sql`
     INSERT INTO visits (patient_id, doctor_id, visit_date, prescription)
     VALUES (${patient_id}, ${doctor_id}, ${visit_date}, ${prescription})
-  `.catch((error) => {
-		console.error('Failed to create item')
+    RETURNING id
+		`
+	const id = data.rows[0].id
+
+	await sql`
+		INSERT INTO visit_diagnoses (visit_id, diagnosis_id)
+		SELECT ${id}, unnest(${diagnoses}::int[]);
+	`.catch((error) => {
+		console.error('Failed insert: ', error)
 	})
 
 	revalidatePath('/visits')
@@ -28,6 +36,7 @@ async function update(formData: FormData) {
 	const doctor_id = formData.get('doctor_id') as string;
 	const visit_date = formData.get('visit_date') as string;
 	const prescription = formData.get('prescription') as string;
+	const diagnoses = formData.getAll('diagnoses') as any
 
 	await sql`
     UPDATE visits
@@ -35,6 +44,20 @@ async function update(formData: FormData) {
     WHERE id = ${id}
   `.catch((error) => {
 		console.error('Failed')
+	})
+
+	await sql`
+		DELETE FROM visit_diagnoses
+		WHERE visit_id = ${id}
+	`.catch((error) => {
+		console.error('Failed delete: ', error)
+	});
+
+	await sql`
+		INSERT INTO visit_diagnoses (visit_id, diagnosis_id)
+		SELECT ${id}, unnest(${diagnoses}::int[]);
+	`.catch((error) => {
+		console.error('Failed insert: ', error)
 	})
 
 	revalidatePath(`/visits/${id}`)
@@ -46,18 +69,24 @@ export default async function Page({ params: { id } }: { params: { id: string } 
 	let data = null
 	const { rows: doctors } = await sql`SELECT id, first_name, last_name FROM doctors`
 	const { rows: patients } = await sql`SELECT id, first_name, last_name FROM patients`
+	const { rows: diagnoses } = await sql`SELECT id, diagnosis_name as name FROM diagnoses`
+	let visitDiagnoses: any[] = []
 
 	if (id !== 'new') {
+		const visitDiagnosesResult = await sql`SELECT diagnosis_id FROM visit_diagnoses WHERE visit_id = ${id}`
+		visitDiagnoses = visitDiagnosesResult.rows.map((item) => item.diagnosis_id)
 		const result = await sql`SELECT * FROM visits WHERE id = ${id}`
 		data = result.rows[0]
 	}
 
 	return (
 			<form className="max-w-sm mx-auto" action={id === 'new' ? create : update}>
-				<input type="hidden" name="id" value={data?.id} />
+				<input type="hidden" name="id" value={data?.id}/>
 				<div className="mb-5">
 					<label htmlFor="patient_id" className="block mb-2 text-sm font-medium text-white-900">Пациент</label>
-					<select name="patient_id" id="patient_id" defaultValue={data?.patient_id} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
+					<select name="patient_id" id="patient_id" defaultValue={data?.patient_id}
+					        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+					        required>
 						{patients.map((item) => (
 								<option key={item.id} value={item.id}>{item.first_name} {item.last_name}</option>
 						))}
@@ -65,7 +94,9 @@ export default async function Page({ params: { id } }: { params: { id: string } 
 				</div>
 				<div className="mb-5">
 					<label htmlFor="doctor_id" className="block mb-2 text-sm font-medium text-white-900">Врач</label>
-					<select name="doctor_id" id="doctor_id" defaultValue={data?.doctor_id} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
+					<select name="doctor_id" id="doctor_id" defaultValue={data?.doctor_id}
+					        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+					        required>
 						{doctors.map((item) => (
 								<option key={item.id} value={item.id}>{item.first_name} {item.last_name}</option>
 						))}
@@ -73,13 +104,30 @@ export default async function Page({ params: { id } }: { params: { id: string } 
 				</div>
 				<div className="mb-5">
 					<label htmlFor="visit_date" className="block mb-2 text-sm font-medium text-white-900">День визита</label>
-					<input type="date" name="visit_date" id="visit_date" defaultValue={formatDate(data?.visit_date)} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+					<input type="date" name="visit_date" id="visit_date" defaultValue={formatDate(data?.visit_date)}
+					       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+					       required/>
+				</div>
+				<div className="mb-5">
+					<label htmlFor="diagnoses"
+					       className="block mb-2 text-sm font-medium text-white-900">Диангноз/ы</label>
+					<select multiple name="diagnoses" id="diagnoses" size={10} defaultValue={visitDiagnoses}
+					        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+					        required>
+						{diagnoses.map((item) => (
+								<option key={item.id} value={item.id}>{item.name}</option>
+						))}
+					</select>
 				</div>
 				<div className="mb-5">
 					<label htmlFor="prescription" className="block mb-2 text-sm font-medium text-white-900">Рекомендации</label>
-					<input type="text" name="prescription" id="prescription" defaultValue={data?.prescription} className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500" required />
+					<input type="text" name="prescription" id="prescription" defaultValue={data?.prescription}
+					       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+					       required/>
 				</div>
-				<button type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-white-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Submit</button>
+				<button type="submit"
+				        className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-white-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">Submit
+				</button>
 			</form>
 	)
 }

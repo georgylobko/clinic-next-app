@@ -28,69 +28,97 @@ async function getItems(params: { doctor_id?: string; patient_id?: string }) {
 		    doctors.first_name as doctor_first_name,
 		    doctors.last_name as doctor_last_name,
 		    patients.first_name as patient_first_name,
-		    patients.last_name as patient_last_name
+		    patients.last_name as patient_last_name,
+		    ARRAY_AGG(diagnoses.diagnosis_name) AS diagnosis_names
 			FROM
 		    visits
 		  LEFT JOIN 
         doctors ON visits.doctor_id = doctors.id
       LEFT JOIN 
-      	patients ON visits.patient_id = patients.id;
+      	patients ON visits.patient_id = patients.id
+      LEFT JOIN
+			  visit_diagnoses vd ON visits.id = vd.visit_id
+			LEFT JOIN
+			  diagnoses ON vd.diagnosis_id = diagnoses.id
+		  GROUP BY
+			  visits.id, visits.visit_date, visits.prescription, doctors.first_name, doctors.last_name, patients.first_name, patients.last_name;
 	`
 	}
 
 	if (doctor_id && patient_id) {
 		return sql`
 			SELECT
-			    v.*,
-			    doctors.first_name as doctor_first_name,
-			    doctors.last_name as doctor_last_name,
-			    patients.first_name as patient_first_name,
-			    patients.last_name as patient_last_name
+		    visits.*,
+		    doctors.first_name as doctor_first_name,
+		    doctors.last_name as doctor_last_name,
+		    patients.first_name as patient_first_name,
+		    patients.last_name as patient_last_name,
+		    ARRAY_AGG(diagnoses.diagnosis_name) AS diagnosis_names
 			FROM
-			    visits v
+		    visits
+		  LEFT JOIN 
+        doctors ON visits.doctor_id = doctors.id
+      LEFT JOIN 
+      	patients ON visits.patient_id = patients.id
+      LEFT JOIN
+			  visit_diagnoses vd ON visits.id = vd.visit_id
 			LEFT JOIN
-			    doctors ON v.doctor_id = doctors.id
-			LEFT JOIN
-			    patients ON v.patient_id = patients.id
+			  diagnoses ON vd.diagnosis_id = diagnoses.id
 			WHERE
-			    v.doctor_id = ${doctor_id} AND v.patient_id = ${patient_id};
+			  visits.doctor_id = ${doctor_id} AND visits.patient_id = ${patient_id}
+		  GROUP BY
+			  visits.id, visits.visit_date, visits.prescription, doctors.first_name, doctors.last_name, patients.first_name, patients.last_name;
 	`
 	}
 
 	if (doctor_id) {
 		return sql`
 			SELECT
-			    v.*,
-			    doctors.first_name as doctor_first_name,
-			    doctors.last_name as doctor_last_name,
-			    patients.first_name as patient_first_name,
-			    patients.last_name as patient_last_name
+		    visits.*,
+		    doctors.first_name as doctor_first_name,
+		    doctors.last_name as doctor_last_name,
+		    patients.first_name as patient_first_name,
+		    patients.last_name as patient_last_name,
+		    ARRAY_AGG(diagnoses.diagnosis_name) AS diagnosis_names
 			FROM
-			    visits v
+		    visits
+		  LEFT JOIN 
+        doctors ON visits.doctor_id = doctors.id
+      LEFT JOIN 
+      	patients ON visits.patient_id = patients.id
+      LEFT JOIN
+			  visit_diagnoses vd ON visits.id = vd.visit_id
 			LEFT JOIN
-			    doctors ON v.doctor_id = doctors.id
-			LEFT JOIN
-			    patients ON v.patient_id = patients.id
+			  diagnoses ON vd.diagnosis_id = diagnoses.id
 			WHERE
-			    v.doctor_id = ${doctor_id};
+			  visits.doctor_id = ${doctor_id}
+		  GROUP BY
+			  visits.id, visits.visit_date, visits.prescription, doctors.first_name, doctors.last_name, patients.first_name, patients.last_name;
 	`
 	}
 
 	return sql`
 		SELECT
-	    v.*,
+	    visits.*,
 	    doctors.first_name as doctor_first_name,
 	    doctors.last_name as doctor_last_name,
 	    patients.first_name as patient_first_name,
-	    patients.last_name as patient_last_name
+	    patients.last_name as patient_last_name,
+	    ARRAY_AGG(diagnoses.diagnosis_name) AS diagnosis_names
 		FROM
-	    visits v
+	    visits
+	  LEFT JOIN 
+      doctors ON visits.doctor_id = doctors.id
+    LEFT JOIN 
+      patients ON visits.patient_id = patients.id
+    LEFT JOIN
+		  visit_diagnoses vd ON visits.id = vd.visit_id
 		LEFT JOIN
-	    doctors ON v.doctor_id = doctors.id
-		LEFT JOIN
-	    patients ON v.patient_id = patients.id
+		  diagnoses ON vd.diagnosis_id = diagnoses.id
 		WHERE
-	    v.patient_id = ${patient_id};
+		  visits.patient_id = ${patient_id}
+	  GROUP BY
+		  visits.id, visits.visit_date, visits.prescription, doctors.first_name, doctors.last_name, patients.first_name, patients.last_name;
 	`
 }
 
@@ -100,6 +128,8 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 	const { rows: doctors } = await sql`SELECT id, first_name, last_name FROM doctors`
 	const { rows: patients } = await sql`SELECT id, first_name, last_name FROM patients`
 	const { rows: visits } = data
+
+	console.log(visits)
 
 	return (
 		<div className="relative overflow-x-auto">
@@ -158,6 +188,9 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 						Рекомендации
 					</th>
 					<th scope="col" className="px-6 py-3">
+						Диагнозы
+					</th>
+					<th scope="col" className="px-6 py-3">
 						Действия
 					</th>
 				</tr>
@@ -176,6 +209,9 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 							</td>
 							<td className="px-6 py-4">
 								{item.prescription}
+							</td>
+							<td className="px-6 py-4">
+								{item.diagnosis_names.join(', ')}
 							</td>
 							<td className="px-6 py-4 flex justify-left">
 								<Link href={`/visits/${item.id}`}>
