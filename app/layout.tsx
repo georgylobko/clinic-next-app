@@ -64,6 +64,11 @@ export default function RootLayout({
                   <span className="ms-3">Лечебные процедуры</span>
                 </Link>
               </li>
+              <li>
+                <Link href="/medications" className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                  <span className="ms-3">Препараты</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </aside>

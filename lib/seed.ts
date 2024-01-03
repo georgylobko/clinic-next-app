@@ -68,16 +68,8 @@ export async function seed() {
       id SERIAL PRIMARY KEY,
       medication_name VARCHAR(255) NOT NULL,
       form VARCHAR(50) NOT NULL,
-      manufacturer VARCHAR(255) NOT NULL,
-      expiry_date DATE NOT NULL
-    );`,
-    sql`CREATE TABLE IF NOT EXISTS prescriptions (
-      id SERIAL PRIMARY KEY,
-      doctor_id INTEGER REFERENCES doctors(id),
-      patient_id INTEGER REFERENCES patients(id),
-      prescription_date DATE NOT NULL,
-      medication_id INTEGER REFERENCES medications(id),
-      instructions TEXT
+      manufacturer VARCHAR(255) NOT NULL
+      description VARCHAR(255) NOT NULL
     );`
   ]);
 
