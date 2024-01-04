@@ -129,8 +129,6 @@ export default async function Page(props: { searchParams: { doctor_id?: string; 
 	const { rows: patients } = await sql`SELECT id, first_name, last_name FROM patients`
 	const { rows: visits } = data
 
-	console.log(visits)
-
 	return (
 		<div className="relative overflow-x-auto">
 			<h2 className="text-4xl font-extrabold mb-4">Визиты</h2>

@@ -62,8 +62,6 @@ export default async function Page(props: { searchParams: { first_name?: string;
 	const data = await getItems(props.searchParams)
 	const { rows: appointment_schedule } = data
 
-	console.log(appointment_schedule)
-
 	return (
 		<div className="relative overflow-x-auto">
 			<h2 className="text-4xl font-extrabold mb-4">График приема</h2>

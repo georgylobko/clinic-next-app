@@ -68,7 +68,7 @@ export async function seed() {
       id SERIAL PRIMARY KEY,
       medication_name VARCHAR(255) NOT NULL,
       form VARCHAR(50) NOT NULL,
-      manufacturer VARCHAR(255) NOT NULL
+      manufacturer VARCHAR(255) NOT NULL,
       description VARCHAR(255) NOT NULL
     );`
   ]);
