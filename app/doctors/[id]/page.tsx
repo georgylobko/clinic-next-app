@@ -8,12 +8,23 @@ async function create(formData: FormData) {
 	const last_name = formData.get('last_name') as string;
 	const office_number = formData.get('office_number') as string;
 	const phone = formData.get('phone') as string;
+	const specializations = formData.getAll('specializations') as any
 
-	await sql`
+	const data = await sql`
     INSERT INTO doctors (first_name, last_name, office_number, phone)
     VALUES (${first_name}, ${last_name}, ${office_number}, ${phone})
+    RETURNING id
   `.catch((error) => {
 		console.error('Failed to create doctor')
+	})
+
+	const id = data?.rows[0].id
+
+	await sql`
+		INSERT INTO doctors_specializations (doctor_id, specialization_id)
+		SELECT ${id}, unnest(${specializations}::int[]);
+	`.catch((error) => {
+		console.error('Failed insert: ', error)
 	})
 
 	revalidatePath('/doctors')
