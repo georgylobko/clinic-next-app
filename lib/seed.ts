@@ -70,6 +70,18 @@ export async function seed() {
       form VARCHAR(50) NOT NULL,
       manufacturer VARCHAR(255) NOT NULL,
       description VARCHAR(255) NOT NULL
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS countries (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS cities (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL
+    );`,
+    sql`CREATE TABLE IF NOT EXISTS streets (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL
     );`
   ]);
 
