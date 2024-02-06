@@ -14,7 +14,13 @@ export async function seed() {
       birth_date DATE NOT NULL,
       gender VARCHAR(10) NOT NULL,
       address VARCHAR(255),
-      phone VARCHAR(20)
+      phone VARCHAR(20),
+      country_id INTEGER REFERENCES countries(id),
+      city_id INTEGER REFERENCES cities(id),
+      street_id INTEGER REFERENCES streets(id),
+      postcode INTEGER,
+      house_number INTEGER,
+      apartment_number INTEGER
     );`,
     sql`CREATE TABLE IF NOT EXISTS doctors (
       id SERIAL PRIMARY KEY,

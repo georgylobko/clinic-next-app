@@ -23,7 +23,24 @@ async function getItems(params: { first_name?: string; last_name?: string }) {
 
 	if (!first_name && !last_name) {
 		return sql`
-			SELECT * FROM patients;
+			SELECT 
+				patients.id as id,
+				first_name, 
+				last_name, 
+				birth_date, 
+				gender, 
+				address, 
+				phone, 
+				postcode,
+				house_number,
+				apartment_number,
+				countries.name as country_name,
+				cities.name as city_name,
+				streets.name as street_name 
+			FROM patients
+			JOIN countries ON countries.id = patients.country_id
+			JOIN cities ON cities.id = patients.city_id
+			JOIN streets ON streets.id = patients.street_id;
 	`
 	}
 
@@ -125,7 +142,9 @@ export default async function Page(props: { searchParams: { first_name?: string;
 								{item.gender}
 							</td>
 							<td className="px-6 py-4">
-								{item.address}
+								{item.country_name}, {item.city_name}, {item.street_name} {item.house_number}, кв {item.apartment_number}, {item.postcode}
+
+
 							</td>
 							<td className="px-6 py-4">
 								{item.phone}
